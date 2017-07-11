@@ -15,12 +15,14 @@ Robin Harris
 
 // char ssid[] = "C4Di_Management";
 // char wifiPassword[] = "c4d1manag3m3nt4747";
-char ssid[] = "workshop";
-char wifiPassword[] = "workshop";
+// char ssid[] = "workshop";
+// char wifiPassword[] = "workshop";
+char ssid[] = "Kercem2";
+char wifiPassword[] = "E0E3106433F4";
 
 const char* mqtt_server = "192.168.0.36";
 char msg[100];
-const char *topicToPublish = "Home/chillis"; //mqtt topic for moisture
+const char *topicToPublish = "Chillis"; //mqtt topic for moisture
 const char *pumpTopic = "Pump"; //mqtt topic for pump status
 char *pumpStatus = "";
 
@@ -31,13 +33,12 @@ PubSubClient client(espClient);
 // ======================================================================
 // PUMP VARIABLES - INTERVAL AND DURATION
 //number of mS between pump running 86400000 is 1 day
-//for testing use a short value e.g.60000 = 1 minute (Pump runs for 15s)
-const unsigned long timeBetweenWatering = 24 * 60 * 60 * 1000;
-unsigned long pumpRunDuration = 15000;
+const unsigned long timeBetweenWatering = 60 * 60 * 1000;
+unsigned long pumpRunDuration = 10000;
 // ======================================================================
 
 unsigned long currentMillis;
-unsigned long previousMillis =0;
+unsigned long previousMillis = 0;
 unsigned long pumpStartMillis;
 
 #define pump1Pin D1
@@ -49,7 +50,8 @@ void publishPump(const char *topic, char *pumpStatus);
 int getMoisture();
 
 void setup(){
-//Serial.begin(9600);
+// Serial.begin(9600);
+// Serial.println("Starting.....");
 pinMode(pump1Pin, OUTPUT);
 pinMode(pump2Pin, OUTPUT);
 //turn off both pumps
@@ -62,6 +64,8 @@ WiFi.begin(ssid, wifiPassword);
     // Serial.print(".");
     delay(200);
   }
+// Serial.print("Connected, IP = ");
+// Serial.println(WiFi.localIP());
 
 client.setServer(mqtt_server, 1883);
 
@@ -74,7 +78,7 @@ if (currentMillis - previousMillis >= timeBetweenWatering){
 	// first check if there is water in the tray
   if (getMoisture() > 500){
     //run pump1 for the set period
-    //Serial.print("Pump1 started\t");
+    // Serial.print("Pump1 started\t");
     pumpStatus = "Started pump 1";
     publishPump(pumpTopic, pumpStatus);
     digitalWrite(pump1Pin, HIGH);
@@ -83,17 +87,17 @@ if (currentMillis - previousMillis >= timeBetweenWatering){
     digitalWrite(pump1Pin, LOW);
     pumpStatus = "Stopped pump 1";
     publishPump(pumpTopic, pumpStatus);
-    //Serial.println("Pump1 stopped");
+    // Serial.println("Pump1 stopped");
     //run pump2 for the set period
     pumpStartMillis = millis();
-    //Serial.print("Pump2 started\t");
+    // Serial.print("Pump2 started\t");
     publishPump(pumpTopic, pumpStatus);
     digitalWrite(pump2Pin, HIGH);
     delay(pumpRunDuration);
     //turn off pump2
     digitalWrite(pump2Pin, LOW);
     publishPump(pumpTopic, pumpStatus);
-    //Serial.println("Pump2 stopped");
+    // Serial.println("Pump2 stopped");
   }//end of adding water block if moisure reading is low enough
   previousMillis = currentMillis;
 }//end of block if it is time to water
