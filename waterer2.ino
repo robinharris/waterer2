@@ -72,7 +72,7 @@ currentMillis = millis();
 //check if it is time to add water
 if (currentMillis - previousMillis >= timeBetweenWatering){
 	// first check if there is water in the tray
-  if (getMoisture() < 500){
+  if (getMoisture() > 500){
     //run pump1 for the set period
     //Serial.print("Pump1 started\t");
     pumpStatus = "Started pump 1";
