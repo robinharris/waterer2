@@ -94,10 +94,9 @@ if (currentMillis - previousMillis >= timeBetweenWatering){
     digitalWrite(pump2Pin, LOW);
     publishPump(pumpTopic, pumpStatus);
     //Serial.println("Pump2 stopped");
-  }//end of adding water block if moisure reading is low
+  }//end of adding water block if moisure reading is low enough
   previousMillis = currentMillis;
 }//end of block if it is time to water
-
 }//end of loop
 
 // ======================================================
@@ -106,24 +105,24 @@ void publishPump(const char *topic, char *pumpStatus){
         client.connect("Chilli_Waterer");
         // Serial.print(".");
         delay(1000); //wait then retry until connected
-      }
-      //construct the JSON string to send
-      snprintf (msg, 100, "{\"Pump\": \"%s\"}", pumpStatus);
-      // send the message
-      client.publish(topic, msg);
   }
+  //construct the JSON string to send
+  snprintf (msg, 100, "{\"Pump\": \"%s\"}", pumpStatus);
+  // send the message
+  client.publish(topic, msg);
+  } // end publishPump
 
 void publish(const char *topic, int data1) {
-    // connect to the mqtt broker
-    while (!client.connected()) {
-    	client.connect("Chilli_Waterer");
-    	// Serial.print(".");
-    	delay(1000); //wait then retry until connected
-    }
-    //construct the JSON string to send
-    snprintf (msg, 100, "{\"sensor_ID\": \"Chillis\",\"Moisture\": %d}", data1);
-    // send the message
-    client.publish(topic, msg);
+  // connect to the mqtt broker
+  while (!client.connected()) {
+  	client.connect("Chilli_Waterer");
+  	// Serial.print(".");
+  	delay(1000); //wait then retry until connected
+  }
+  //construct the JSON string to send
+  snprintf (msg, 100, "{\"sensor_ID\": \"Chillis\",\"Moisture\": %d}", data1);
+  // send the message
+  client.publish(topic, msg);
 } //end of publish
 
 //=========================================================
