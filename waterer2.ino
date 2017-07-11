@@ -37,7 +37,7 @@ const unsigned long timeBetweenWatering = 60 * 60 * 1000;
 unsigned long pumpRunDuration = 10000;
 // ======================================================================
 
-unsigned long currentMillis;
+unsigned long currentMillis = 60 * 60 * 1000;
 unsigned long previousMillis = 0;
 unsigned long pumpStartMillis;
 
@@ -71,6 +71,31 @@ WiFi.begin(ssid, wifiPassword);
 // Serial.println(WiFi.localIP());
 
 client.setServer(mqtt_server, 1883);
+
+// first check if there is water in the tray
+if (getMoisture() > 0){
+  //run pump1 for the set period
+  // Serial.print("Pump1 started\t");
+  pumpStatus = "Started pump 1";
+  publishPump(pumpTopic, pumpStatus);
+  digitalWrite(pump1Pin, HIGH);
+  delay(pumpRunDuration);
+  //turn off pump1
+  digitalWrite(pump1Pin, LOW);
+  pumpStatus = "Stopped pump 1";
+  publishPump(pumpTopic, pumpStatus);
+  // Serial.println("Pump1 stopped");
+  //run pump2 for the set period
+  pumpStartMillis = millis();
+  // Serial.print("Pump2 started\t");
+  publishPump(pumpTopic, pumpStatus);
+  digitalWrite(pump2Pin, HIGH);
+  delay(pumpRunDuration);
+  //turn off pump2
+  digitalWrite(pump2Pin, LOW);
+  publishPump(pumpTopic, pumpStatus);
+  // Serial.println("Pump2 stopped");
+}//end of adding water block if moisure reading is low enough
 
 }//end setup
 
