@@ -43,6 +43,7 @@ unsigned long pumpStartMillis;
 
 #define pump1Pin D1
 #define pump2Pin D2
+#define sensorVoltagePin D7
 
 //Prototpye function definitions
 void publish(const char *topic, int data1);
@@ -54,9 +55,11 @@ void setup(){
 // Serial.println("Starting.....");
 pinMode(pump1Pin, OUTPUT);
 pinMode(pump2Pin, OUTPUT);
+pinMode(sensorVoltagePin, OUTPUT);
 //turn off both pumps
 digitalWrite(pump1Pin,LOW);
 digitalWrite(pump2Pin,LOW);
+digitalWrite(sensorVoltagePin, LOW);
 
 // Connect to WiFi
 WiFi.begin(ssid, wifiPassword);
@@ -132,12 +135,17 @@ void publish(const char *topic, int data1) {
 //=========================================================
 
 int getMoisture() {
+  //apply voltage to the moisture sensor
+  digitalWrite(sensorVoltagePin, HIGH);
+  delay(1000);
   // takes 10 readings separated by 500mS and averages them
   int cumulativeLevel = 0;
   for (int i; i<10; i++){
     cumulativeLevel = cumulativeLevel + analogRead(A0);
     delay(500);
   }
+  //turn off voltage to moisture sensor
+  digitalWrite(sensorVoltagePin, LOW);
   int averageLevel = cumulativeLevel / 10;
   //send the values to the mqtt broker
   publish(topicToPublish, averageLevel);
