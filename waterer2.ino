@@ -135,12 +135,13 @@ void publish(const char *topic, int data1) {
 
 int getMoisture() {
   // takes 10 readings separated by 500mS and averages them
-  int cumulativeLevel = random(0,1023);
-  // for (int i; i<10; i++){
-  //   cumulativeLevel = cumulativeLevel + analogRead(A0);
-  //   delay(500);
-  // }
+  int cumulativeLevel = 0;
+  for (int i; i<10; i++){
+    cumulativeLevel = cumulativeLevel + random(0,1023);
+    delay(100);
+  }
   int averageLevel = cumulativeLevel / 10;
+  Serial.println(averageLevel);
   //send the values to the mqtt broker
   // publish(topicToPublish, averageLevel);
   return averageLevel;
