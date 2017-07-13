@@ -49,6 +49,9 @@ unsigned long pumpStartMillis;
 void publish(const char *topic, int data1);
 void publishPump(const char *topic, char *pumpStatus);
 int getMoisture();
+void reconnect();
+void callback(char* topic, byte* payload, unsigned int length);
+
 
 void setup(){
 // Serial.begin(9600);
@@ -56,6 +59,7 @@ void setup(){
 pinMode(pump1Pin, OUTPUT);
 pinMode(pump2Pin, OUTPUT);
 pinMode(sensorVoltagePin, OUTPUT);
+pinMode(BUILTIN_LED, OUTPUT);
 //turn off both pumps
 digitalWrite(pump1Pin,LOW);
 digitalWrite(pump2Pin,LOW);
@@ -71,36 +75,16 @@ WiFi.begin(ssid, wifiPassword);
 // Serial.println(WiFi.localIP());
 
 client.setServer(mqtt_server, 1883);
-
-// first check if there is water in the tray
-if (getMoisture() > 0){
-  //run pump1 for the set period
-  // Serial.print("Pump1 started\t");
-  pumpStatus = "Started pump 1";
-  publishPump(pumpTopic, pumpStatus);
-  digitalWrite(pump1Pin, HIGH);
-  delay(pumpRunDuration);
-  //turn off pump1
-  digitalWrite(pump1Pin, LOW);
-  pumpStatus = "Stopped pump 1";
-  publishPump(pumpTopic, pumpStatus);
-  // Serial.println("Pump1 stopped");
-  //run pump2 for the set period
-  pumpStartMillis = millis();
-  // Serial.print("Pump2 started\t");
-  publishPump(pumpTopic, pumpStatus);
-  digitalWrite(pump2Pin, HIGH);
-  delay(pumpRunDuration);
-  //turn off pump2
-  digitalWrite(pump2Pin, LOW);
-  publishPump(pumpTopic, pumpStatus);
-  // Serial.println("Pump2 stopped");
-}//end of adding water block if moisure reading is low enough
+client.setCallback(callback);
 
 }//end setup
 
 void loop() {
 currentMillis = millis();
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
 //check if it is time to add water
 if (currentMillis - previousMillis >= timeBetweenWatering){
 	// first check if there is water in the tray
@@ -119,11 +103,13 @@ if (currentMillis - previousMillis >= timeBetweenWatering){
     //run pump2 for the set period
     pumpStartMillis = millis();
     // Serial.print("Pump2 started\t");
+    pumpStatus = "Started pump 2";
     publishPump(pumpTopic, pumpStatus);
     digitalWrite(pump2Pin, HIGH);
     delay(pumpRunDuration);
     //turn off pump2
     digitalWrite(pump2Pin, LOW);
+    pumpStatus = "Stopped pump 2";
     publishPump(pumpTopic, pumpStatus);
     // Serial.println("Pump2 stopped");
   }//end of adding water block if moisure reading is low enough
@@ -133,10 +119,8 @@ if (currentMillis - previousMillis >= timeBetweenWatering){
 
 // ======================================================
 void publishPump(const char *topic, char *pumpStatus){
-  while (!client.connected()) {
-        client.connect("Chilli_Waterer");
-        // Serial.print(".");
-        delay(1000); //wait then retry until connected
+  if (!client.connected()) {
+        reconnect();
   }
   //construct the JSON string to send
   snprintf (msg, 100, "{\"Pump\": \"%s\"}", pumpStatus);
@@ -145,11 +129,8 @@ void publishPump(const char *topic, char *pumpStatus){
   } // end publishPump
 
 void publish(const char *topic, int data1) {
-  // connect to the mqtt broker
-  while (!client.connected()) {
-  	client.connect("Chilli_Waterer");
-  	// Serial.print(".");
-  	delay(1000); //wait then retry until connected
+  if (!client.connected()) {
+      reconnect();
   }
   //construct the JSON string to send
   snprintf (msg, 100, "{\"sensor_ID\": \"Chillis\",\"Moisture\": %d}", data1);
@@ -176,3 +157,60 @@ int getMoisture() {
   publish(topicToPublish, averageLevel);
   return averageLevel;
 } //end of getSensorReadings
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    // Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect("Chilli_Waterer")) {
+      // Serial.println("connected");
+      // Once connected, publish an announcement...
+      // client.publish("outTopic", "hello world");
+      // ... and resubscribe
+      client.subscribe("startpump");
+    } 
+    else {
+      // Serial.print("failed, rc=");
+      // Serial.print(client.state());
+      // Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }// end else
+  }// end if
+}// end reconnect
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  // Serial.print("Message arrived [");
+  // Serial.print(topic);
+  // Serial.print("] ");
+  // for (int i = 0; i < length; i++) {
+  //   Serial.print((char)payload[i]);
+  // }
+  // Serial.println();
+
+  // Switch on the LED if an 1 was received as first character
+  if ((char)payload[0] == '1') {
+    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
+    // but actually the LED is on; this is because
+    // it is acive low on the ESP-01)
+    pumpStatus = "Started pump 1";
+    publishPump(pumpTopic, pumpStatus);
+    digitalWrite(pump1Pin, HIGH);
+    delay(pumpRunDuration);
+    //turn off pump1
+    digitalWrite(pump1Pin, LOW);
+    pumpStatus = "Stopped pump 1";
+    publishPump(pumpTopic, pumpStatus);
+    pumpStatus = "Started pump 2";
+    publishPump(pumpTopic, pumpStatus);
+    digitalWrite(pump2Pin, HIGH);
+    delay(pumpRunDuration);
+    //turn off pump1
+    digitalWrite(pump2Pin, LOW);
+    pumpStatus = "Stopped pump 2";
+    publishPump(pumpTopic, pumpStatus);
+    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by ma
+  }
+}
+
