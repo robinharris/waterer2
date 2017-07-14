@@ -202,6 +202,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
     digitalWrite(pump1Pin, LOW);
     pumpStatus = "Stopped pump 1";
     publishPump(pumpTopic, pumpStatus);
+    digitalWrite(BUILTIN_LED, HIGH);
+  }
+
+  if ((char)payload[0] == '2') {
+    digitalWrite(BUILTIN_LED, LOW);  
     pumpStatus = "Started pump 2";
     publishPump(pumpTopic, pumpStatus);
     digitalWrite(pump2Pin, HIGH);
