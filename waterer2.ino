@@ -3,9 +3,11 @@ Designed for a Wemos D1
 Pumps water to TWO separate plants are pre-determined intervals.
 Connect pumps via FET switch to D1 and D2
 Published pump start and stop messages to MQTT broker
-Added a moisture detector
+Added a moisture detector that sends values to MQTT Broker
+Can manually turn on pump 1 with a message to topic 'startpump' first char = 1
+Manually turn on pump 2 with a message to 'startpump' first char = 2
 Robin Harris
-4th July 2017
+15th July 2017
 */
 
 #include <Wire.h>
@@ -33,11 +35,11 @@ PubSubClient client(espClient);
 // ======================================================================
 // PUMP VARIABLES - INTERVAL AND DURATION
 //number of mS between pump running 86400000 is 1 day
-const unsigned long timeBetweenWatering = 60 * 60 * 1000;
-unsigned long pumpRunDuration = 10000;
+const unsigned long timeBetweenWatering = 24 * 60 * 60 * 1000;
+unsigned long pumpRunDuration = 15000;
 // ======================================================================
 
-unsigned long currentMillis = 60 * 60 * 1000;
+unsigned long currentMillis = timeBetweenWatering;
 unsigned long previousMillis = 0;
 unsigned long pumpStartMillis;
 
